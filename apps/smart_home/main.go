@@ -49,6 +49,20 @@ func main() {
 	sensorHandler := handlers.NewSensorHandler(database, temperatureService)
 	sensorHandler.RegisterRoutes(apiRoutes)
 
+	// Initialize proxy clients and routes (MVP integration)
+	deviceMgmtURL := getEnv("DEVICE_MGMT_URL", "http://device-mgmt:8092")
+	telemetryURL := getEnv("TELEMETRY_URL", "http://telemetry:8091")
+	devClient := services.NewDeviceMgmtClient(deviceMgmtURL)
+	telClient := services.NewTelemetryClient(telemetryURL)
+	proxyHandler := handlers.NewProxyHandler(devClient, telClient)
+	proxyHandler.RegisterRoutes(apiRoutes)
+
+	// Static UI dashboard at /ui
+	router.Static("/ui", "./public")
+	router.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/ui/")
+	})
+
 	// Start server
 	srv := &http.Server{
 		Addr:    getEnv("PORT", ":8080"),

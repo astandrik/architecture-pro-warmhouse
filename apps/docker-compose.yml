@@ -33,6 +33,28 @@ services:
     networks:
       - smarthome-network
 
+  telemetry:
+    build:
+      context: ./telemetry-svc
+    image: smart-home/telemetry-svc:latest
+    container_name: telemetry-svc
+    ports:
+      - "8091:8091"
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
+  device-mgmt:
+    build:
+      context: ./device-mgmt-svc
+    image: smart-home/device-mgmt-svc:latest
+    container_name: device-mgmt-svc
+    ports:
+      - "8092:8092"
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
   app:
     build:
       context: ./smart_home
@@ -43,9 +65,15 @@ services:
         condition: service_healthy
       temperature-api:
         condition: service_started
+      telemetry:
+        condition: service_started
+      device-mgmt:
+        condition: service_started
     environment:
       - DATABASE_URL=postgres://postgres:postgres@postgres:5432/smarthome
       - TEMPERATURE_API_URL=http://temperature-api:8081
+      - TELEMETRY_URL=http://telemetry:8091
+      - DEVICE_MGMT_URL=http://device-mgmt:8092
     ports:
       - "8080:8080"
     restart: unless-stopped

@@ -259,6 +259,7 @@ Locations - название комнаты, sensorId - идентификато
 
 В результате у вас должны быть созданы Dockerfiles и docker-compose для запуска микросервисов. 
 
+
 В данном репозитории реализовано минимальное MVP:
 - `apps/telemetry-svc` (Node.js/TypeScript):  
   - `POST /v1/telemetry` — приём телеметрии  
