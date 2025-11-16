@@ -184,7 +184,7 @@ func (h *SensorHandler) GetSensors(c *gin.Context)
 # Задание 3. Разработка ER-диаграммы
 
 ```markdown
-[ER-диаграмма экосистемы "Тёплый дом" (PlantUML)](schemas/ER_diagram.puml)
+[ER-диаграмма экосистемы "Тёплый дом" (PlantUML)](schemas/to-be/ER_diagram.puml)
 ```
 
 Диаграмма отражает основные сущности (User, House, Room, Module, Device, TelemetryData, Scenario, DeviceCommand и др.) и связи между ними.

@@ -1,5 +1,5 @@
-@startuml C4_Containers_ToBe
-!include <C4/C4_Container>
+@startuml Containers_ToBe
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
 LAYOUT_WITH_LEGEND()
 
