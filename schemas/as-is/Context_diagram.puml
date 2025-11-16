@@ -1,0 +1,25 @@
+@startuml C4_Context
+!include <C4/C4_Context>
+
+LAYOUT_WITH_LEGEND()
+
+title Контекстная диаграмма системы "Тёплый дом" (As-Is)
+
+Person(user, "Пользователь", "Владелец дома с установленными датчиками температуры")
+
+System(smarthome_monolith, "Smart Home Monolith", "Монолитное приложение на Go для управления датчиками температуры и мониторинга показаний")
+
+System_Ext(temperature_api, "Temperature API", "Внешний сервис, предоставляющий данные о температуре с физических датчиков")
+
+System_Ext(web_browser, "Web Browser", "Веб-интерфейс для взаимодействия с системой")
+
+SystemDb(postgres, "PostgreSQL", "База данных для хранения конфигурации датчиков и метаданных")
+
+Rel(user, web_browser, "Использует для управления датчиками")
+Rel(web_browser, smarthome_monolith, "Отправляет HTTP-запросы (REST API)", "JSON/HTTPS")
+Rel(smarthome_monolith, postgres, "Читает/записывает конфигурацию датчиков", "SQL/TCP")
+Rel(smarthome_monolith, temperature_api, "Запрашивает показания температуры", "HTTP GET")
+Rel(temperature_api, smarthome_monolith, "Возвращает данные температуры", "JSON")
+
+SHOW_LEGEND()
+@enduml

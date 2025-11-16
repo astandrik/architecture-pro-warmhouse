@@ -1,0 +1,176 @@
+@startuml ER_SmartHome
+
+title ER-диаграмма экосистемы "Тёплый дом"
+
+' Пользователи и дома
+entity "User" as user {
+  * id : UUID
+  --
+  email : string
+  password_hash : string
+  created_at : datetime
+}
+
+entity "House" as house {
+  * id : UUID
+  --
+  owner_id : UUID
+  name : string
+  address : string
+}
+
+entity "Room" as room {
+  * id : UUID
+  --
+  house_id : UUID
+  name : string
+}
+
+' Устройства и модули
+entity "DeviceType" as dev_type {
+  * id : UUID
+  --
+  code : string        ' HEATING, LIGHT, GATE, CAMERA, TEMP_SENSOR
+  name : string
+  category : string    ' actuator / sensor
+}
+
+entity "ModuleType" as mod_type {
+  * id : UUID
+  --
+  code : string        ' HEATING_KIT, LIGHT_KIT и т.п.
+  name : string
+}
+
+entity "Module" as module {
+  * id : UUID
+  --
+  module_type_id : UUID
+  house_id : UUID
+  name : string
+}
+
+entity "Device" as device {
+  * id : UUID
+  --
+  device_type_id : UUID
+  module_id : UUID
+  room_id : UUID
+  serial_number : string
+  connection_status : string   ' online / offline
+  operational_state : string   ' on/off, open/closed, heating/idle
+  last_seen_at : datetime
+}
+
+note right of device
+  Инвариант дома устройства:
+  для каждого Device соответствующие
+  Room.house_id и Module.house_id
+  должны совпадать.
+end note
+
+' Телеметрия
+entity "TelemetryData" as telemetry {
+  * id : UUID
+  --
+  device_id : UUID
+  timestamp : datetime
+  metric_type : string   ' temperature, state, etc.
+  value_number : decimal
+  value_text : string
+}
+
+' Сценарии и правила
+entity "Scenario" as scenario {
+  * id : UUID
+  --
+  created_by_user_id : UUID
+  name : string
+  is_active : boolean
+}
+
+entity "ScenarioHouse" as scen_house {
+  * scenario_id : UUID
+  * house_id : UUID
+}
+
+entity "ScenarioCondition" as scen_cond {
+  * id : UUID
+  --
+  scenario_id : UUID
+  device_id : UUID
+  metric_type : string
+  operator : string      ' <, >, ==, etc.
+  threshold_number : decimal  ' для числовых метрик
+  threshold_text : string     ' для текстовых метрик (state, mode и т.п.)
+}
+
+note right of scen_cond
+  Для каждой записи ScenarioCondition используется
+  либо threshold_number (числовые метрики),
+  либо threshold_text (текстовые состояния),
+  в зависимости от metric_type.
+end note
+
+entity "ScenarioAction" as scen_act {
+  * id : UUID
+  --
+  scenario_id : UUID
+  target_device_id : UUID
+  action_type : string   ' TURN_ON, TURN_OFF, OPEN, CLOSE, etc.
+  payload : string
+}
+
+' Команды управления устройствами
+entity "DeviceCommand" as cmd {
+  * id : UUID
+  --
+  device_id : UUID
+  scenario_id : UUID     ' NULL, если команда ручная
+  command_type : string
+  payload : string
+  status : string        ' queued, sent, done, failed
+  created_at : datetime
+  executed_at : datetime
+}
+
+' Связи
+
+user ||--o{ house : "owns"
+
+house ||--o{ room : "rooms"
+
+house ||--o{ module : "modules"
+mod_type ||--o{ module : "variants"
+
+room ||--o{ device : "devices"
+dev_type ||--o{ device : "typed"
+module ||--o{ device : "contains"
+
+device ||--o{ telemetry : "produces"
+
+house ||--o{ scen_house : ""
+user ||--o{ scenario : "created"
+
+scenario ||--o{ scen_house : ""
+
+scenario ||--o{ scen_cond : "conditions"
+scenario ||--o{ scen_act : "actions"
+
+device ||--o{ scen_cond : "when device"
+device ||--o{ scen_act : "controls"
+
+device ||--o{ cmd : "commands"
+scenario ||--o{ cmd : "generated"
+
+note right of cmd
+  Инвариант источника команды:
+  - команда от пользователя:
+    scenario_id IS NULL
+  - команда от сценария:
+    scenario_id IS NOT NULL
+end note
+
+@enduml
+
+

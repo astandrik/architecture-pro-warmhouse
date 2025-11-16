@@ -1,0 +1,49 @@
+@startuml DeviceManagementAndControl_Code
+
+title Структура кода Device Management & Control Service (пример отопления)
+
+package "Device Management & Control Service" {
+
+  ' Пример цепочки классов для управления отоплением
+  class HeatingApiController {
+    +handleTurnOn()
+    +handleTurnOff()
+  }
+
+  class HeatingCommandService {
+    +turnOn(command)
+    +turnOff(command)
+  }
+
+  class AccessPolicy {
+    +canControl(userId, deviceId)
+  }
+
+  class CommandRepository {
+    +save(command)
+    +findById(id)
+  }
+
+  class DeviceAdapter {
+    +sendCommand(command)
+  }
+
+  class UserHousesClient
+  class DeviceRegistryClient
+  class MessageBusClient
+
+  HeatingApiController --> HeatingCommandService : вызывает
+  HeatingCommandService --> AccessPolicy : проверяет права
+  HeatingCommandService --> CommandRepository : сохраняет команду
+  HeatingCommandService --> DeviceAdapter : отправляет команду
+
+  AccessPolicy --> UserHousesClient : запрашивает дома и комнаты
+  AccessPolicy --> DeviceRegistryClient : запрашивает устройство
+
+  DeviceAdapter --> MessageBusClient : публикует в брокер
+
+}
+
+@enduml
+
+

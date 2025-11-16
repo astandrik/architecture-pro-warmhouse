@@ -1,0 +1,56 @@
+asyncapi: 2.6.0
+info:
+  title: Smart Home Telemetry Broker API
+  version: 1.0.0
+  description: >
+    Telemetry ingestion via message broker for the "Тёплый дом" platform.
+
+servers:
+  broker:
+    url: mqtt://broker:1883
+    protocol: mqtt
+    description: Example MQTT broker
+
+channels:
+  telemetry.raw:
+    description: Raw telemetry messages from devices and partner platforms.
+    subscribe:
+      summary: Telemetry Service consumes raw telemetry messages.
+      operationId: consumeRawTelemetry
+      message:
+        name: TelemetrySample
+        title: Telemetry sample
+        contentType: application/json
+        payload:
+          type: object
+          required:
+            - device_id
+            - timestamp
+            - metric_type
+          properties:
+            device_id:
+              type: string
+              format: uuid
+            timestamp:
+              type: string
+              format: date-time
+            metric_type:
+              type: string
+            value_number:
+              type: number
+              format: double
+              nullable: true
+            value_text:
+              type: string
+              nullable: true
+        examples:
+          - name: temperatureSample
+            summary: Temperature telemetry sample
+            payload:
+              device_id: 96cfe7f2-6a9a-4b86-9d62-a49006cdd0f3
+              timestamp: 2025-11-16T10:45:12Z
+              metric_type: temperature
+              value_number: 21.7
+              value_text: null
+
+

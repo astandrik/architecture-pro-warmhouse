@@ -1,0 +1,426 @@
+openapi: 3.0.3
+info:
+  title: Smart Home Microservices API
+  version: 1.0.0
+  description: >
+    REST API endpoints for inter-service communication in the "Тёплый дом" platform.
+
+servers:
+  - url: https://api.smart-home.local
+    description: Example API Gateway endpoint
+
+paths:
+  /v1/device-commands:
+    post:
+      summary: Create device command
+      description: Create a command to control a device; execution is asynchronous.
+      operationId: createDeviceCommand
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceCommandCreateRequest"
+            examples:
+              heatingTurnOn:
+                summary: Turn on heating via scenario
+                value:
+                  device_id: 96cfe7f2-6a9a-4b86-9d62-a49006cdd0f3
+                  command_type: TURN_ON
+                  payload:
+                    mode: COMFORT
+                    target_temperature: 23.0
+                  scenario_id: a332e1d7-f52f-4e5f-8f20-dc9874fa1a80
+      responses:
+        "202":
+          description: Command accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceCommandCreateResponse"
+              examples:
+                accepted:
+                  summary: Command queued
+                  value:
+                    command_id: 4c3538d3-0fd0-4c80-9f63-9e03136d7d63
+                    status: queued
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden (access denied for user or scenario)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/internal/devices/{deviceId}:
+    get:
+      summary: Get device details
+      description: Get detailed information about a device from Device Registry.
+      operationId: getDeviceDetails
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          description: ID of the device.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Device details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceDetailsResponse"
+              examples:
+                example:
+                  summary: Heating actuator device
+                  value:
+                    id: 96cfe7f2-6a9a-4b86-9d62-a49006cdd0f3
+                    device_type:
+                      id: 0e43926f-f667-4b91-b62d-d5e84cb6f1b7
+                      code: HEATING
+                      name: Heating actuator
+                      category: actuator
+                    module:
+                      id: 0a44f234-1fb6-4e6c-bd82-5cb1b1bea23c
+                      module_type_id: bafc5c71-74be-4ccd-af2e-84ed280842c7
+                      house_id: f77d8b1b-91a9-44a9-a715-2e68455f59ec
+                      name: Boiler room kit
+                    room:
+                      id: 5d0dcd9a-9e92-4b5e-9ff9-6a3f34c8b8d0
+                      house_id: f77d8b1b-91a9-44a9-a715-2e68455f59ec
+                      name: Living room
+                    serial_number: SN-THERMO-001
+                    connection_status: online
+                    operational_state: HEATING
+                    last_seen_at: 2025-11-16T10:45:12Z
+        "404":
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/internal/users/{userId}/houses-structure:
+    get:
+      summary: Get user houses structure
+      description: >
+        Get houses, rooms and related device IDs for a user from User & Houses Service.
+      operationId: getUserHousesStructure
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID of the user.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Houses structure for the user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserHousesStructureResponse"
+              examples:
+                example:
+                  summary: Single house with one room and two devices
+                  value:
+                    user_id: 2c4b5e1d-44d3-4a85-9b84-26a0b6f7119f
+                    houses:
+                      - id: f77d8b1b-91a9-44a9-a715-2e68455f59ec
+                        name: Main house
+                        address: Some street, 1
+                        rooms:
+                          - id: 5d0dcd9a-9e92-4b5e-9ff9-6a3f34c8b8d0
+                            name: Living room
+                            device_ids:
+                              - 96cfe7f2-6a9a-4b86-9d62-a49006cdd0f3
+                              - 8fa50b00-7f4d-4a2c-b1a4-41f8688fab55
+        "404":
+          description: User or houses not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/telemetry:
+    post:
+      summary: Ingest telemetry sample
+      description: Ingest a telemetry sample for a device into Telemetry Service.
+      operationId: ingestTelemetry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelemetryIngestRequest"
+            examples:
+              temperatureSample:
+                summary: Temperature sample
+                value:
+                  device_id: 96cfe7f2-6a9a-4b86-9d62-a49006cdd0f3
+                  timestamp: 2025-11-16T10:45:12Z
+                  metric_type: temperature
+                  value_number: 21.7
+                  value_text: null
+      responses:
+        "202":
+          description: Telemetry accepted for processing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: queued
+        "400":
+          description: Bad request (e.g. invalid payload)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    DeviceCommandCreateRequest:
+      type: object
+      required:
+        - device_id
+        - command_type
+      properties:
+        device_id:
+          type: string
+          format: uuid
+          description: ID of the target device.
+        command_type:
+          type: string
+          description: Type of command (TURN_ON, TURN_OFF, OPEN, CLOSE, SET_TEMPERATURE, etc.).
+        payload:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Arbitrary payload serialized into DeviceCommand.payload.
+        scenario_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Scenario that triggered the command, if any.
+
+    DeviceCommandCreateResponse:
+      type: object
+      required:
+        - command_id
+        - status
+      properties:
+        command_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          description: Initial status of the command (e.g. queued).
+
+    DeviceDetailsResponse:
+      type: object
+      required:
+        - id
+        - device_type
+        - module
+        - room
+        - serial_number
+        - connection_status
+        - operational_state
+      properties:
+        id:
+          type: string
+          format: uuid
+        device_type:
+          type: object
+          required:
+            - id
+            - code
+            - name
+            - category
+          properties:
+            id:
+              type: string
+              format: uuid
+            code:
+              type: string
+            name:
+              type: string
+            category:
+              type: string
+        module:
+          type: object
+          required:
+            - id
+            - module_type_id
+            - house_id
+            - name
+          properties:
+            id:
+              type: string
+              format: uuid
+            module_type_id:
+              type: string
+              format: uuid
+            house_id:
+              type: string
+              format: uuid
+            name:
+              type: string
+        room:
+          type: object
+          required:
+            - id
+            - house_id
+            - name
+          properties:
+            id:
+              type: string
+              format: uuid
+            house_id:
+              type: string
+              format: uuid
+            name:
+              type: string
+        serial_number:
+          type: string
+        connection_status:
+          type: string
+          description: Connection status (online/offline).
+        operational_state:
+          type: string
+          description: Operational state (ON/OFF, OPEN/CLOSED, HEATING/IDLE, etc.).
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    UserHousesStructureResponse:
+      type: object
+      required:
+        - user_id
+        - houses
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        houses:
+          type: array
+          items:
+            type: object
+            required:
+              - id
+              - name
+              - address
+              - rooms
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+              address:
+                type: string
+              rooms:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - name
+                    - device_ids
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    name:
+                      type: string
+                    device_ids:
+                      type: array
+                      items:
+                        type: string
+                        format: uuid
+
+    TelemetryIngestRequest:
+      type: object
+      required:
+        - device_id
+        - timestamp
+        - metric_type
+      properties:
+        device_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        metric_type:
+          type: string
+        value_number:
+          type: number
+          format: double
+          nullable: true
+        value_text:
+          type: string
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          nullable: true
+          additionalProperties: true

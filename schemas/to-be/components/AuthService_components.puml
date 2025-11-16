@@ -1,0 +1,26 @@
+@startuml C4_Component_Auth
+!include <C4/C4_Component>
+
+LAYOUT_WITH_LEGEND()
+
+title Компоненты Auth Service
+
+Container_Boundary(auth_svc, "Auth Service") {
+    Component(auth_api, "Auth API / Controller", "REST", "HTTP-эндпоинты авторизации")
+    Component(auth_app, "Auth Application Service", "Service", "Логика аутентификации")
+    Component(encoder, "Password/Token Encoder", "Component", "Хеши и подпись токенов")
+    Component(auth_repo, "Auth Repository", "Repository", "Доступ к данным")
+}
+
+ContainerDb(auth_db, "auth_db", "SQL DB", "Пользователи и токены")
+
+Rel(auth_api, auth_app, "Вызывает")
+Rel(auth_app, encoder, "Использует")
+Rel(auth_app, auth_repo, "Использует")
+Rel(auth_repo, auth_db, "Чтение/запись", "SQL/TCP")
+
+SHOW_LEGEND()
+
+@enduml
+
+

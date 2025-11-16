@@ -1,0 +1,25 @@
+@startuml C4_Context
+!include <C4/C4_Context>
+
+LAYOUT_WITH_LEGEND()
+
+title Контекстная диаграмма системы "Тёплый дом" (To-Be)
+
+Person(user, "Владелец дома", "Сам выбирает модули, подключает устройства и управляет домом")
+
+System_Ext(webapp, "Web/Mobile App", "Клиентское приложение", "UI для самообслуживания SaaS")
+
+System(smarthome_saas, "Платформа «Тёплый дом»", "SaaS", "Облачная платформа управления умным домом")
+
+System_Ext(devices, "Устройства умного дома", "Датчики, реле, свет, ворота, камеры")
+
+System_Ext(partner_clouds, "Платформы партнёров", "Облачные платформы производителей устройств")
+
+Rel(user, webapp, "Использует для управления домом")
+Rel(webapp, smarthome_saas, "Управление модулями и сценариями", "JSON/HTTPS")
+
+Rel(devices, smarthome_saas, "Отправляют телеметрию и принимают команды", "Интернет, IoT-протоколы")
+Rel(partner_clouds, smarthome_saas, "Обмен данными устройств партнёров", "HTTP/MQTT")
+
+SHOW_LEGEND()
+@enduml

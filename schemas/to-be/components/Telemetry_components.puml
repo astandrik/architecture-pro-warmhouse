@@ -1,0 +1,31 @@
+@startuml C4_Component_Telemetry
+!include <C4/C4_Component>
+
+LAYOUT_WITH_LEGEND()
+
+title Компоненты Telemetry Service
+
+Container_Boundary(telemetry_svc, "Telemetry Service") {
+    Component(t_in_api, "Telemetry Ingest API", "API", "Приём телеметрии")
+    Component(t_bus_client, "MessageBus Client", "Client", "Чтение/публикация в брокер")
+    Component(t_proc, "Telemetry Processor", "Service", "Валидация и нормализация")
+    Component(t_store, "Telemetry Store", "Service", "Работа с хранилищем")
+    Component(t_query_api, "Telemetry Query API", "REST", "Запрос текущих и исторических данных")
+    Component(t_events, "Scenario Events Publisher", "Component", "Отправка событий телеметрии в User & Houses по HTTP")
+}
+
+ContainerDb(telemetry_db, "telemetry_db", "Time-series DB", "Телеметрия")
+
+Rel(t_in_api, t_proc, "Передаёт показания")
+Rel(t_bus_client, t_proc, "Передаёт сообщения")
+Rel(t_proc, t_store, "Сохраняет данные")
+Rel(t_proc, t_events, "Формирует события для сценариев")
+Rel(t_store, telemetry_db, "Чтение/запись", "DB")
+
+Rel(t_query_api, t_store, "Читает данные")
+
+SHOW_LEGEND()
+
+@enduml
+
+
