@@ -3,23 +3,34 @@
 
 LAYOUT_WITH_LEGEND()
 
-title Контекстная диаграмма системы "Тёплый дом" (To-Be)
+title Контекстная диаграмма системы "Тёплый дом" (To-Be — раскрытые сервисы)
 
-Person(user, "Владелец дома", "Сам выбирает модули, подключает устройства и управляет домом")
+Person(user, "Владелец дома", "Управляет домом через UI")
 
-System_Ext(webapp, "Web/Mobile App", "Клиентское приложение", "UI для самообслуживания SaaS")
-
-System(smarthome_saas, "Платформа «Тёплый дом»", "SaaS", "Облачная платформа управления умным домом")
+System(apigw, "Smart Home Monolith / BFF", "Монолит (Go)", "Единая точка входа; проксирует в микросервисы")
+System(auth_svc, "Auth Service", "Микросервис", "Аутентификация и авторизация")
+System(userhouses_svc, "User & Houses Service", "Микросервис", "Пользователи, дома, комнаты, сценарии")
+System(devreg_svc, "Device Registry Service", "Микросервис", "Реестр типов/модулей/устройств")
+System(device_mgmt_svc, "Device Management & Control", "Микросервис (Node.js)", "Команды устройствам")
+System(telemetry_svc, "Telemetry Service", "Микросервис (Node.js)", "Приём и запрос телеметрии")
 
 System_Ext(devices, "Устройства умного дома", "Датчики, реле, свет, ворота, камеры")
+System_Ext(temperature_api, "Temperature API", "Внешний источник", "Телеметрия температуры от вендора")
+System_Ext(message_broker, "Message Broker", "Kafka/RabbitMQ", "Асинхронные события и команды")
 
-System_Ext(partner_clouds, "Платформы партнёров", "Облачные платформы производителей устройств")
+Rel(user, apigw, "Управление и просмотр", "HTTPS")
 
-Rel(user, webapp, "Использует для управления домом")
-Rel(webapp, smarthome_saas, "Управление модулями и сценариями", "JSON/HTTPS")
+Rel(apigw, auth_svc, "Проксирует авторизацию", "HTTP")
+Rel(apigw, userhouses_svc, "Проксирует запросы домов/сценариев", "HTTP")
+Rel(apigw, devreg_svc, "Проксирует запросы реестра", "HTTP")
+Rel(apigw, device_mgmt_svc, "Проксирует команды", "HTTP")
+Rel(apigw, telemetry_svc, "Проксирует запросы телеметрии", "HTTP")
 
-Rel(devices, smarthome_saas, "Отправляют телеметрию и принимают команды", "Интернет, IoT-протоколы")
-Rel(partner_clouds, smarthome_saas, "Обмен данными устройств партнёров", "HTTP/MQTT")
+Rel(temperature_api, message_broker, "Телеметрия →", "HTTP/Async")
+Rel(telemetry_svc, userhouses_svc, "События для сценариев", "HTTP/Async")
+Rel(devices, message_broker, "Телеметрия →, Команды ←", "MQTT/IoT")
+Rel(telemetry_svc, message_broker, "Читает/публикует события", "Async")
+Rel(device_mgmt_svc, message_broker, "Публикует команды", "Async")
 
 SHOW_LEGEND()
 @enduml

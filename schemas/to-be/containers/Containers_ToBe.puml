@@ -27,10 +27,11 @@ System_Boundary(smarthome, "Платформа «Тёплый дом»") {
     Container(telemetry, "Telemetry Service", "Service", "Телеметрия и история")
     ContainerDb(telemetry_db, "telemetry_db", "Time-series DB", "Данные датчиков")
 
-    Container(message_broker, "Message Broker", "Kafka/RabbitMQ", "События и команды")
+    Container(message_broker, "Message Broker", "MQTT", "События и команды")
 }
 
 System_Ext(devices, "Устройства умного дома", "Датчики, реле, свет, ворота, камеры")
+System_Ext(partners, "Партнёрские платформы", "Temperature API и др.")
 
 Rel(user, webapp, "Управляет домом", "HTTPS")
 Rel(webapp, apigw, "HTTP-запросы UI", "HTTPS")
@@ -47,7 +48,7 @@ Rel(devreg, devreg_db, "Чтение/запись", "SQL/TCP")
 Rel(apigw, device_mgmt, "Команды устройств", "HTTP")
 Rel(device_mgmt, device_mgmt_db, "Чтение/запись", "SQL/TCP")
 
-Rel(apigw, telemetry, "Запрос телеметрии", "HTTP")
+Rel(apigw, telemetry, "Запрос/ингест телеметрии", "HTTP")
 Rel(telemetry, telemetry_db, "Чтение/запись", "SQL/TCP")
 
 Rel(telemetry, userhouses, "События для сценариев", "HTTP/Async")
@@ -56,6 +57,7 @@ Rel(device_mgmt, message_broker, "Команды устройств", "Async")
 Rel(telemetry, message_broker, "Получает телеметрию, публикует события", "Async")
 
 Rel(devices, message_broker, "Телеметрия и команды", "MQTT/IoT")
+Rel(partners, message_broker, "Телеметрия →", "HTTP/Async")
 
 SHOW_LEGEND()
 

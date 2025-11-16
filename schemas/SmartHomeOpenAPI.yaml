@@ -69,6 +69,39 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/device-commands/{id}:
+    get:
+      summary: Get device command by id
+      description: Get detailed information and status of a device command.
+      operationId: getDeviceCommandById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the command
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Command found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceCommandResponse"
+        "404":
+          description: Command not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/internal/devices/{deviceId}:
     get:
       summary: Get device details
@@ -213,6 +246,48 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Device not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      summary: Query telemetry samples
+      description: Get latest telemetry samples for a device.
+      operationId: getTelemetry
+      parameters:
+        - name: device_id
+          in: query
+          required: true
+          description: Device ID to query for
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of samples to return (1..1000)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        "200":
+          description: Telemetry samples
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TelemetrySampleResponse"
+        "400":
+          description: Bad request (e.g. device_id missing)
           content:
             application/json:
               schema:
@@ -424,3 +499,60 @@ components:
           type: object
           nullable: true
           additionalProperties: true
+    DeviceCommandResponse:
+      type: object
+      required:
+        - id
+        - deviceId
+        - commandType
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        deviceId:
+          type: string
+          format: uuid
+        commandType:
+          type: string
+        payload:
+          type: object
+          nullable: true
+          additionalProperties: true
+        scenarioId:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          type: string
+          enum: [queued, sent, done, failed]
+        createdAt:
+          type: string
+          format: date-time
+        executedAt:
+          type: string
+          format: date-time
+          nullable: true
+    TelemetrySampleResponse:
+      type: object
+      required:
+        - deviceId
+        - timestamp
+        - metricType
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        metricType:
+          type: string
+        valueNumber:
+          type: number
+          format: double
+          nullable: true
+        valueText:
+          type: string
+          nullable: true
