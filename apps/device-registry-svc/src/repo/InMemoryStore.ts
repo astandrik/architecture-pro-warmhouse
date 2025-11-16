@@ -15,8 +15,8 @@ export class InMemoryStore {
   readonly moduleTypes = new Map<string, ModuleType>();
 
   constructor() {
-    // Seed device types
-    const dt = (
+    // Seed device and module types only
+    const seedType = (
       code: string,
       name: string,
       category: "sensor" | "actuator"
@@ -26,44 +26,51 @@ export class InMemoryStore {
       this.deviceTypes.set(id, t);
       return t;
     };
-    const temp = dt("TEMP_SENSOR", "Temperature Sensor", "sensor");
-    dt("HEATING", "Heating Actuator", "actuator");
-    dt("LIGHT", "Light Actuator", "actuator");
-    dt("GATE", "Gate Actuator", "actuator");
-    dt("CAMERA", "Camera", "sensor");
+    seedType("TEMP_SENSOR", "Temperature Sensor", "sensor");
+    seedType("HEATING", "Heating Actuator", "actuator");
+    seedType("LIGHT", "Light Actuator", "actuator");
+    seedType("GATE", "Gate Actuator", "actuator");
+    seedType("CAMERA", "Camera", "sensor");
 
-    // Seed rooms/modules/moduleTypes
     const mtId = uuidv4();
     this.moduleTypes.set(
       mtId,
       new ModuleType(mtId, "HEATING_KIT", "Heating Kit")
     );
-    const houseId = uuidv4();
-    const living = new Room(uuidv4(), houseId, "Living Room");
-    const bedroom = new Room(uuidv4(), houseId, "Bedroom");
-    const kitchen = new Room(uuidv4(), houseId, "Kitchen");
-    this.rooms.set(living.id, living);
-    this.rooms.set(bedroom.id, bedroom);
-    this.rooms.set(kitchen.id, kitchen);
-    const mod = new Module(uuidv4(), mtId, houseId, "Boiler room kit");
+  }
+
+  seedDevicesForRooms(rooms: Room[]) {
+    // Create one module bound to the first room's house (or random)
+    const mt = Array.from(this.moduleTypes.values())[0];
+    const houseId = rooms.length > 0 ? rooms[0].houseId : uuidv4();
+    const mod = new Module(uuidv4(), mt.id, houseId, "Default kit");
     this.modules.set(mod.id, mod);
 
-    // Seed 3 temperature devices, IDs matching 1,2,3 for monolith mapping
-    const seedDevice = (idHint: string, room: Room, serial: string) => {
+    // Map well-known room names to fixed device ids for TEMP_SENSOR mapping
+    const nameToId: Record<string, string> = {
+      "Living Room": "1",
+      Bedroom: "2",
+      Kitchen: "3",
+    };
+    const tempType = Array.from(this.deviceTypes.values()).find(
+      (t) => t.code === "TEMP_SENSOR"
+    );
+    if (!tempType) return;
+    for (const r of rooms) {
+      this.rooms.set(r.id, r);
+      const idHint = nameToId[r.name];
+      if (!idHint) continue;
       const d = new Device(
         idHint,
-        temp.id,
+        tempType.id,
         mod.id,
-        room.id,
-        serial,
+        r.id,
+        `SN-THERMO-${idHint.padStart(3, "0")}`,
         "online",
         "IDLE",
         new Date()
       );
       this.devices.set(d.id, d);
-    };
-    seedDevice("1", living, "SN-THERMO-001");
-    seedDevice("2", bedroom, "SN-THERMO-002");
-    seedDevice("3", kitchen, "SN-THERMO-003");
+    }
   }
 }

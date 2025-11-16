@@ -3,23 +3,23 @@
 
 LAYOUT_WITH_LEGEND()
 
-title Контекстная диаграмма системы "Тёплый дом" (To-Be)
+title Контекстная диаграмма системы "Тёплый дом" (As-Is)
 
-Person(user, "Владелец дома", "Сам выбирает модули, подключает устройства и управляет домом")
+Person(user, "Пользователь", "Владелец дома с установленными датчиками температуры")
 
-System_Ext(webapp, "Web/Mobile App", "Клиентское приложение", "UI для самообслуживания SaaS")
+System(smarthome_monolith, "Smart Home Monolith", "Монолитное приложение на Go для управления датчиками температуры и мониторинга показаний")
 
-System(smarthome_saas, "Платформа «Тёплый дом»", "SaaS", "Облачная платформа управления умным домом")
+System_Ext(temperature_api, "Temperature API", "Внешний сервис, предоставляющий данные о температуре с физических датчиков")
 
-System_Ext(devices, "Устройства умного дома", "Датчики, реле, свет, ворота, камеры")
+System_Ext(web_browser, "Web Browser", "Веб-интерфейс для взаимодействия с системой")
 
-System_Ext(partner_clouds, "Платформы партнёров", "Облачные платформы производителей устройств")
+SystemDb(postgres, "PostgreSQL", "База данных для хранения конфигурации датчиков и метаданных")
 
-Rel(user, webapp, "Использует для управления домом")
-Rel(webapp, smarthome_saas, "Управление модулями и сценариями", "JSON/HTTPS")
-
-Rel(devices, smarthome_saas, "Отправляют телеметрию и принимают команды", "Интернет, IoT-протоколы")
-Rel(partner_clouds, smarthome_saas, "Обмен данными устройств партнёров", "HTTP/MQTT")
+Rel(user, web_browser, "Использует для управления датчиками")
+Rel(web_browser, smarthome_monolith, "Отправляет HTTP-запросы (REST API)", "JSON/HTTPS")
+Rel(smarthome_monolith, postgres, "Читает/записывает конфигурацию датчиков", "SQL/TCP")
+Rel(smarthome_monolith, temperature_api, "Запрашивает показания температуры", "HTTP GET")
+Rel(temperature_api, smarthome_monolith, "Возвращает данные температуры", "JSON")
 
 SHOW_LEGEND()
 @enduml

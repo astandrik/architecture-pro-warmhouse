@@ -69,6 +69,10 @@ services:
       - smarthome-network
     environment:
       - USER_HOUSES_URL=http://user-houses:8094
+      - DEVICE_REGISTRY_DB_URL=postgres://postgres:postgres@postgres:5432/device_registry
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   user-houses:
     build:
@@ -80,6 +84,11 @@ services:
     restart: unless-stopped
     networks:
       - smarthome-network
+    environment:
+      - USER_HOUSES_DB_URL=postgres://postgres:postgres@postgres:5432/user_houses
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   app:
     build:

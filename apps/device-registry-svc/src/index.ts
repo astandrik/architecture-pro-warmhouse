@@ -1,9 +1,7 @@
 import express from "express";
-import { InMemoryStore } from "./repo/InMemoryStore";
 import { RegistryController } from "./http/RegistryController";
 
-const store = new InMemoryStore();
-const controller = new RegistryController(store);
+const controller = new RegistryController();
 const app = express();
 app.use(express.json());
 app.use(controller.router);
