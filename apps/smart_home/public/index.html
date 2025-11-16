@@ -30,6 +30,20 @@
     </div>
   </header>
 
+  <section id="add">
+    <h2 style="font-size:16px;margin:0 0 8px 0;">Add Sensor</h2>
+    <form id="addForm" class="toolbar" style="flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+      <input type="text" id="fName" placeholder="Name" required style="padding:6px 8px;"/>
+      <select id="fType" required style="padding:6px 8px;">
+        <option value="temperature">temperature</option>
+      </select>
+      <input type="text" id="fLocation" placeholder="Location (e.g., Living Room)" required style="padding:6px 8px;"/>
+      <input type="text" id="fUnit" placeholder="Unit (e.g., °C)" value="°C" style="padding:6px 8px;"/>
+      <button type="submit">Add</button>
+    </form>
+    <div id="addMsg" class="muted"></div>
+  </section>
+
   <section>
     <table>
       <thead>
@@ -42,10 +56,11 @@
         <th>Unit</th>
         <th>Status</th>
         <th>Updated</th>
+        <th>Actions</th>
       </tr>
       </thead>
       <tbody id="rows">
-      <tr><td colspan="8" class="muted">Loading…</td></tr>
+      <tr><td colspan="9" class="muted">Loading…</td></tr>
       </tbody>
     </table>
   </section>
@@ -54,6 +69,8 @@
     const rows = document.getElementById('rows');
     const updatedAt = document.getElementById('updatedAt');
     const refreshBtn = document.getElementById('refreshBtn');
+    const addForm = document.getElementById('addForm');
+    const addMsg = document.getElementById('addMsg');
 
     async function fetchSensors() {
       try {
@@ -72,14 +89,91 @@
             <td>${escapeHtml(s.unit || '')}</td>
             <td class="status ${s.status === 'active' ? 'ok' : 'off'}">${escapeHtml(s.status)}</td>
             <td class="muted">${formatTime(s.last_updated)}</td>
+            <td>
+              <div class="toolbar">
+                <input type="number" step="0.1" value="${typeof s.value === 'number' ? s.value : 0}" data-id="${s.id}" class="val" style="width:90px;padding:4px 6px;"/>
+                <select data-id="${s.id}" class="stat" style="padding:4px 6px;">
+                  <option value="active"${s.status === 'active' ? ' selected' : ''}>active</option>
+                  <option value="inactive"${s.status !== 'active' ? ' selected' : ''}>inactive</option>
+                </select>
+                <button class="save" data-id="${s.id}">Save</button>
+                <button class="del" data-id="${s.id}">Delete</button>
+              </div>
+            </td>
           `;
           rows.appendChild(tr);
         }
         updatedAt.textContent = 'Updated ' + new Date().toLocaleTimeString();
       } catch (e) {
-        rows.innerHTML = `<tr><td colspan="8" class="muted">Failed to load: ${escapeHtml(String(e))}</td></tr>`;
+        rows.innerHTML = `<tr><td colspan="9" class="muted">Failed to load: ${escapeHtml(String(e))}</td></tr>`;
       }
     }
+
+    rows.addEventListener('click', async (ev) => {
+      const target = ev.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target.classList.contains('save')) {
+        const id = target.getAttribute('data-id');
+        if (!id) return;
+        const valInput = rows.querySelector(`input.val[data-id="${id}"]`);
+        const statSelect = rows.querySelector(`select.stat[data-id="${id}"]`);
+        const val = parseFloat(valInput && valInput.value ? valInput.value : '0');
+        const status = statSelect && statSelect.value ? statSelect.value : 'inactive';
+        try {
+          const res = await fetch(`/api/v1/sensors/${id}/value`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ value: isFinite(val) ? val : 0, status })
+          });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          await fetchSensors();
+        } catch (e) {
+          alert('Failed to update: ' + String(e));
+        }
+        return;
+      }
+      if (target.classList.contains('del')) {
+        const id = target.getAttribute('data-id');
+        if (!id) return;
+        if (!confirm(`Delete sensor #${id}?`)) return;
+        try {
+          const res = await fetch(`/api/v1/sensors/${id}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          await fetchSensors();
+        } catch (e) {
+          alert('Failed to delete: ' + String(e));
+        }
+        return;
+      }
+    });
+
+    addForm.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      addMsg.textContent = '';
+      const name = document.getElementById('fName').value.trim();
+      const type = document.getElementById('fType').value;
+      const location = document.getElementById('fLocation').value.trim();
+      const unit = document.getElementById('fUnit').value.trim();
+      if (!name || !type || !location) {
+        addMsg.textContent = 'Fill name, type, location';
+        return;
+      }
+      try {
+        const res = await fetch('/api/v1/sensors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, type, location, unit })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        document.getElementById('fName').value = '';
+        document.getElementById('fLocation').value = '';
+        await fetchSensors();
+        addMsg.textContent = 'Added';
+        setTimeout(() => addMsg.textContent = '', 1500);
+      } catch (e) {
+        addMsg.textContent = 'Failed to add: ' + String(e);
+      }
+    });
 
     function formatTime(iso) {
       try { return new Date(iso).toLocaleString(); } catch { return ''; }
@@ -90,9 +184,7 @@
 
     refreshBtn.addEventListener('click', fetchSensors);
     fetchSensors();
-    setInterval(fetchSensors, 10000);
+    setInterval(fetchSensors, 2000);
   </script>
 </body>
 </html>
-
-
