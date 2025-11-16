@@ -4,7 +4,10 @@ import { InMemoryStore } from "../repo/InMemoryStore";
 
 export class RegistryController {
   readonly router = express.Router();
+  private readonly userHousesUrl: string;
   constructor(private readonly store: InMemoryStore) {
+    this.userHousesUrl =
+      process.env.USER_HOUSES_URL || "http://user-houses:8094";
     this.router.get("/health", (_req, res) => res.status(200).send("OK"));
     this.router.get("/v1/device-types", this.getDeviceTypes);
     this.router.get("/v1/devices", this.listDevices);
@@ -43,7 +46,10 @@ export class RegistryController {
     res.status(200).json(this.toDto(d));
   };
 
-  private createDevice = (req: express.Request, res: express.Response) => {
+  private createDevice = async (
+    req: express.Request,
+    res: express.Response
+  ) => {
     const { device_type_code, room_id, module_id, serial_number } =
       req.body || {};
     if (!device_type_code || !room_id) {
@@ -62,8 +68,8 @@ export class RegistryController {
         .json({ code: "BAD_REQUEST", message: "unknown device_type_code" });
       return;
     }
-    const room = this.store.rooms.get(room_id);
-    if (!room) {
+    const exists = await this.roomExists(String(room_id));
+    if (!exists) {
       res.status(400).json({ code: "BAD_REQUEST", message: "unknown room_id" });
       return;
     }
@@ -76,7 +82,7 @@ export class RegistryController {
       id,
       deviceTypeId: dt.id,
       moduleId: modId,
-      roomId: room.id,
+      roomId: String(room_id),
       serialNumber: serial_number || `SN-${id.slice(0, 8).toUpperCase()}`,
       connectionStatus: "online",
       operationalState: "IDLE",
@@ -109,5 +115,18 @@ export class RegistryController {
       operational_state: d.operationalState,
       last_seen_at: d.lastSeenAt?.toISOString?.() ?? null,
     };
+  }
+
+  private async roomExists(roomId: string): Promise<boolean> {
+    try {
+      const resp = await fetch(`${this.userHousesUrl}/v1/rooms`);
+      if (!resp.ok) return false;
+      const rooms = await resp.json();
+      return (
+        Array.isArray(rooms) && rooms.some((r: any) => String(r.id) === roomId)
+      );
+    } catch {
+      return false;
+    }
   }
 }

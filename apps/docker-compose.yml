@@ -67,6 +67,8 @@ services:
     restart: unless-stopped
     networks:
       - smarthome-network
+    environment:
+      - USER_HOUSES_URL=http://user-houses:8094
 
   user-houses:
     build:

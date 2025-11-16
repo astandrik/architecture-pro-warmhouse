@@ -91,6 +91,7 @@
         <th>Room</th>
         <th>Conn</th>
         <th>State</th>
+        <th>Current</th>
         <th>Actions</th>
       </tr>
       </thead>
@@ -259,6 +260,19 @@
           const room = roomById(d.room_id);
           const code = type ? type.code : '';
           const cat = type ? type.category : '';
+          let current = '';
+          if (cat === 'sensor' && code === 'TEMP_SENSOR') {
+            try {
+              const trRes = await fetch(`/api/v1/telemetry?device_id=${encodeURIComponent(d.id)}&limit=1`);
+              if (trRes.ok) {
+                const arr = await trRes.json();
+                if (Array.isArray(arr) && arr.length > 0) {
+                  const s = arr[0];
+                  current = (s.valueNumber ?? s.value_number ?? s.valueText ?? s.value_text ?? '').toString();
+                }
+              }
+            } catch {}
+          }
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>${escapeHtml(d.id)}</td>
@@ -266,6 +280,7 @@
             <td>${escapeHtml(room ? room.name : d.room_id)}</td>
             <td>${escapeHtml(d.connection_status || '')}</td>
             <td>${escapeHtml(d.operational_state || '')}</td>
+            <td>${escapeHtml(current)}</td>
             <td>
               <div class="toolbar">
                 ${cat === 'actuator' ? `<button class="cmd" data-id="${escapeHtml(d.id)}" data-cmd="HEATING_TURN_ON">Turn On</button>` : ''}

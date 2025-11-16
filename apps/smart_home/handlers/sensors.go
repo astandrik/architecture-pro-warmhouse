@@ -18,13 +18,15 @@ import (
 type SensorHandler struct {
 	DB                 *db.DB
 	TemperatureService *services.TemperatureService
+	TelemetryClient    *services.TelemetryClient
 }
 
 // NewSensorHandler creates a new SensorHandler
-func NewSensorHandler(db *db.DB, temperatureService *services.TemperatureService) *SensorHandler {
+func NewSensorHandler(db *db.DB, temperatureService *services.TemperatureService, telemetry *services.TelemetryClient) *SensorHandler {
 	return &SensorHandler{
 		DB:                 db,
 		TemperatureService: temperatureService,
+		TelemetryClient:    telemetry,
 	}
 }
 
@@ -60,6 +62,16 @@ func (h *SensorHandler) GetSensors(c *gin.Context) {
 				sensors[i].Status = tempData.Status
 				sensors[i].LastUpdated = tempData.Timestamp
 				log.Printf("Updated temperature data for sensor %d from external API", sensor.ID)
+				// Forward to Telemetry Service as source of truth
+				if h.TelemetryClient != nil {
+					_, _ = h.TelemetryClient.Ingest(map[string]any{
+						"device_id":    tempData.SensorID,
+						"timestamp":    tempData.Timestamp.Format(time.RFC3339),
+						"metric_type":  "temperature",
+						"value_number": tempData.Value,
+						"value_text":   nil,
+					})
+				}
 			} else {
 				log.Printf("Failed to fetch temperature data for sensor %d: %v", sensor.ID, err)
 			}
@@ -92,6 +104,16 @@ func (h *SensorHandler) GetSensorByID(c *gin.Context) {
 			sensor.Status = tempData.Status
 			sensor.LastUpdated = tempData.Timestamp
 			log.Printf("Updated temperature data for sensor %d from external API", sensor.ID)
+			// Forward to Telemetry Service
+			if h.TelemetryClient != nil {
+				_, _ = h.TelemetryClient.Ingest(map[string]any{
+					"device_id":    tempData.SensorID,
+					"timestamp":    tempData.Timestamp.Format(time.RFC3339),
+					"metric_type":  "temperature",
+					"value_number": tempData.Value,
+					"value_text":   nil,
+				})
+			}
 		} else {
 			log.Printf("Failed to fetch temperature data for sensor %d: %v", sensor.ID, err)
 		}
@@ -126,6 +148,17 @@ func (h *SensorHandler) GetTemperatureByLocation(c *gin.Context) {
 		"timestamp":   tempData.Timestamp,
 		"description": tempData.Description,
 	})
+
+	// Forward to Telemetry Service if SensorID present
+	if h.TelemetryClient != nil && tempData.SensorID != "" {
+		_, _ = h.TelemetryClient.Ingest(map[string]any{
+			"device_id":    tempData.SensorID,
+			"timestamp":    tempData.Timestamp.Format(time.RFC3339),
+			"metric_type":  "temperature",
+			"value_number": tempData.Value,
+			"value_text":   nil,
+		})
+	}
 }
 
 // CreateSensor handles POST /api/v1/sensors
