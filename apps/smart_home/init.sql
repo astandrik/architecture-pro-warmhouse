@@ -1,8 +1,11 @@
 -- Create the database if it doesn't exist
 CREATE DATABASE smarthome;
+CREATE DATABASE device_registry;
+CREATE DATABASE user_houses;
 
 -- Connect to the database
 \c smarthome;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Create the sensors table
@@ -32,20 +35,8 @@ VALUES
     ('Office Temperature', 'temperature', 'Office', 0, '°C', 'inactive'),
     ('Outdoor Temperature', 'temperature', 'Outdoor', 0, '°C', 'inactive');
 
--- =======================
--- Device Registry database (per C4/ER)
--- =======================
-DO
-$$
-BEGIN
-   PERFORM 1 FROM pg_database WHERE datname = 'device_registry';
-   IF NOT FOUND THEN
-      EXECUTE 'CREATE DATABASE device_registry';
-   END IF;
-END
-$$;
-
 \c device_registry;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE IF NOT EXISTS device_types (
@@ -129,20 +120,8 @@ FROM device_types dt, modules m
 WHERE dt.code='TEMP_SENSOR'
 ON CONFLICT (id) DO NOTHING;
 
--- =======================
--- User & Houses database (per C4/ER) - minimal Rooms
--- =======================
-DO
-$$
-BEGIN
-   PERFORM 1 FROM pg_database WHERE datname = 'user_houses';
-   IF NOT FOUND THEN
-      EXECUTE 'CREATE DATABASE user_houses';
-   END IF;
-END
-$$;
-
 \c user_houses;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE IF NOT EXISTS houses (
