@@ -91,16 +91,14 @@
             <td class="muted">${formatTime(s.last_updated)}</td>
             <td>
               <div class="toolbar">
-                <input type="number" step="0.1" value="${typeof s.value === 'number' ? s.value : 0}" data-id="${s.id}" class="val" style="width:90px;padding:4px 6px;"/>
-                <select data-id="${s.id}" class="stat" style="padding:4px 6px;">
-                  <option value="active"${s.status === 'active' ? ' selected' : ''}>active</option>
-                  <option value="inactive"${s.status !== 'active' ? ' selected' : ''}>inactive</option>
-                </select>
-                <button class="save" data-id="${s.id}">Save</button>
+                <button class="act" data-id="${s.id}">Activate</button>
+                <button class="deact" data-id="${s.id}">Deactivate</button>
                 <button class="del" data-id="${s.id}">Delete</button>
               </div>
             </td>
           `;
+          // keep current numeric value on the row for status-only updates
+          tr.dataset.value = (typeof s.value === 'number' ? String(s.value) : '0');
           rows.appendChild(tr);
         }
         updatedAt.textContent = 'Updated ' + new Date().toLocaleTimeString();
@@ -112,23 +110,23 @@
     rows.addEventListener('click', async (ev) => {
       const target = ev.target;
       if (!(target instanceof HTMLElement)) return;
-      if (target.classList.contains('save')) {
+      if (target.classList.contains('act') || target.classList.contains('deact')) {
         const id = target.getAttribute('data-id');
         if (!id) return;
-        const valInput = rows.querySelector(`input.val[data-id="${id}"]`);
-        const statSelect = rows.querySelector(`select.stat[data-id="${id}"]`);
-        const val = parseFloat(valInput && valInput.value ? valInput.value : '0');
-        const status = statSelect && statSelect.value ? statSelect.value : 'inactive';
+        const row = target.closest('tr');
+        const current = parseFloat((row && row.dataset && row.dataset.value) ? row.dataset.value : '0');
+        const val = Number.isFinite(current) ? current : 0;
+        const status = target.classList.contains('act') ? 'active' : 'inactive';
         try {
           const res = await fetch(`/api/v1/sensors/${id}/value`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ value: isFinite(val) ? val : 0, status })
+            body: JSON.stringify({ value: val, status })
           });
           if (!res.ok) throw new Error('HTTP ' + res.status);
           await fetchSensors();
         } catch (e) {
-          alert('Failed to update: ' + String(e));
+          alert('Failed to update status: ' + String(e));
         }
         return;
       }
