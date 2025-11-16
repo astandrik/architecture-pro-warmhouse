@@ -1,0 +1,241 @@
+openapi: 3.0.3
+info:
+  title: Device Registry Service API
+  version: 1.0.0
+  description: >
+    REST API for the Device Registry Service (per C4/ER): device types, rooms, devices CRUD (in-memory for MVP).
+
+servers:
+  - url: http://localhost:8093
+    description: Local Device Registry
+
+paths:
+  /v1/device-types:
+    get:
+      summary: List device types
+      operationId: listDeviceTypes
+      responses:
+        "200":
+          description: Device types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeviceType"
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/devices:
+    get:
+      summary: List devices
+      operationId: listDevices
+      parameters:
+        - name: type_code
+          in: query
+          required: false
+          description: Filter by DeviceType.code (e.g., TEMP_SENSOR, HEATING)
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Devices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Device"
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create device
+      operationId: createDevice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceCreateRequest"
+            examples:
+              tempSensor:
+                value:
+                  device_type_code: TEMP_SENSOR
+                  room_id: "room-uuid"
+                  serial_number: "SN-123456"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/devices/{id}:
+    get:
+      summary: Get device by id
+      operationId: getDevice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Device
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Device"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Delete device
+      operationId: deleteDevice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    DeviceType:
+      type: object
+      required: [id, code, name, category]
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+          example: TEMP_SENSOR
+        name:
+          type: string
+        category:
+          type: string
+          enum: [sensor, actuator]
+
+    Room:
+      type: object
+      required: [id, houseId, name]
+      properties:
+        id:
+          type: string
+        houseId:
+          type: string
+        name:
+          type: string
+
+    Device:
+      type: object
+      required:
+        - id
+        - device_type_id
+        - module_id
+        - room_id
+        - serial_number
+        - connection_status
+        - operational_state
+      properties:
+        id:
+          type: string
+        device_type_id:
+          type: string
+        module_id:
+          type: string
+        room_id:
+          type: string
+        serial_number:
+          type: string
+        connection_status:
+          type: string
+          enum: [online, offline]
+        operational_state:
+          type: string
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    DeviceCreateRequest:
+      type: object
+      required: [device_type_code, room_id]
+      properties:
+        device_type_code:
+          type: string
+          description: One of DeviceType.code (e.g., TEMP_SENSOR, HEATING)
+        room_id:
+          type: string
+        module_id:
+          type: string
+          nullable: true
+        serial_number:
+          type: string
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string

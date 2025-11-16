@@ -1,0 +1,54 @@
+openapi: 3.0.3
+info:
+  title: User & Houses Service API
+  version: 1.0.0
+  description: >
+    REST API for User & Houses Service (rooms listing; simplified MVP).
+
+servers:
+  - url: http://localhost:8094
+    description: Local User & Houses Service
+
+paths:
+  /v1/rooms:
+    get:
+      summary: List rooms
+      operationId: listRooms
+      responses:
+        "200":
+          description: Rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Room"
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    Room:
+      type: object
+      required: [id, houseId, name]
+      properties:
+        id:
+          type: string
+        houseId:
+          type: string
+        name:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+

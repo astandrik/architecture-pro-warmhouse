@@ -27,4 +27,6 @@ INSERT INTO sensors (name, type, location, value, unit, status)
 VALUES
     ('Living Room Temperature', 'temperature', 'Living Room', 0, '°C', 'inactive'),
     ('Bedroom Temperature', 'temperature', 'Bedroom', 0, '°C', 'inactive'),
-    ('Kitchen Temperature', 'temperature', 'Kitchen', 0, '°C', 'inactive');
+    ('Kitchen Temperature', 'temperature', 'Kitchen', 0, '°C', 'inactive'),
+    ('Office Temperature', 'temperature', 'Office', 0, '°C', 'inactive'),
+    ('Outdoor Temperature', 'temperature', 'Outdoor', 0, '°C', 'inactive');

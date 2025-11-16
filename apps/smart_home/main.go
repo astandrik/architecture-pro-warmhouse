@@ -52,9 +52,13 @@ func main() {
 	// Initialize proxy clients and routes (MVP integration)
 	deviceMgmtURL := getEnv("DEVICE_MGMT_URL", "http://device-mgmt:8092")
 	telemetryURL := getEnv("TELEMETRY_URL", "http://telemetry:8091")
+	deviceRegistryURL := getEnv("DEVICE_REGISTRY_URL", "http://device-registry:8093")
+	userHousesURL := getEnv("USER_HOUSES_URL", "http://user-houses:8094")
 	devClient := services.NewDeviceMgmtClient(deviceMgmtURL)
 	telClient := services.NewTelemetryClient(telemetryURL)
-	proxyHandler := handlers.NewProxyHandler(devClient, telClient)
+	regClient := services.NewDeviceRegistryClient(deviceRegistryURL)
+	uhClient := services.NewUserHousesClient(userHousesURL)
+	proxyHandler := handlers.NewProxyHandler(devClient, telClient, regClient, uhClient)
 	proxyHandler.RegisterRoutes(apiRoutes)
 
 	// Static UI dashboard at /ui

@@ -65,6 +65,41 @@
     </table>
   </section>
 
+  <section id="devices">
+    <h2 style="font-size:16px;margin:16px 0 8px 0;">Devices</h2>
+    <div class="toolbar" style="flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+      <label>Type:</label>
+      <select id="dTypeFilter" style="padding:6px 8px;">
+        <option value="">(all)</option>
+      </select>
+      <button id="dRefresh">Refresh</button>
+    </div>
+    <div class="toolbar" style="flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+      <strong>Create device</strong>
+      <label>type</label>
+      <select id="dTypeCreate" style="padding:6px 8px;"></select>
+      <label>room</label>
+      <select id="dRoomCreate" style="padding:6px 8px;"></select>
+      <button id="dCreate">Create</button>
+      <span class="muted" id="dMsg"></span>
+    </div>
+    <table>
+      <thead>
+      <tr>
+        <th>ID</th>
+        <th>Type</th>
+        <th>Room</th>
+        <th>Conn</th>
+        <th>State</th>
+        <th>Actions</th>
+      </tr>
+      </thead>
+      <tbody id="dRows">
+      <tr><td colspan="6" class="muted">Loading…</td></tr>
+      </tbody>
+    </table>
+  </section>
+
   <script>
     const rows = document.getElementById('rows');
     const updatedAt = document.getElementById('updatedAt');
@@ -183,6 +218,131 @@
     refreshBtn.addEventListener('click', fetchSensors);
     fetchSensors();
     setInterval(fetchSensors, 2000);
+
+    // ===== Devices section (Device Registry via monolith proxy) =====
+    const dRows = document.getElementById('dRows');
+    const dTypeFilter = document.getElementById('dTypeFilter');
+    const dTypeCreate = document.getElementById('dTypeCreate');
+    const dRoomCreate = document.getElementById('dRoomCreate');
+    const dRefresh = document.getElementById('dRefresh');
+    const dCreate = document.getElementById('dCreate');
+    const dMsg = document.getElementById('dMsg');
+
+    let deviceTypes = []; // {id, code, category}
+    let rooms = []; // {id, name}
+    function typeById(id){ return deviceTypes.find(t => t.id === id); }
+    function roomById(id){ return rooms.find(r => r.id === id); }
+
+    async function fetchTypesRooms() {
+      const [t, r] = await Promise.all([
+        fetch('/api/v1/device-types').then(x => x.json()),
+        fetch('/api/v1/rooms').then(x => x.json()),
+      ]);
+      deviceTypes = t;
+      rooms = r;
+      // populate filters/selects
+      dTypeFilter.innerHTML = '<option value=\"\">(all)</option>' + deviceTypes.map(t => `<option value=\"${escapeHtml(t.code)}\">${escapeHtml(t.code)}</option>`).join('');
+      dTypeCreate.innerHTML = deviceTypes.map(t => `<option value=\"${escapeHtml(t.code)}\">${escapeHtml(t.code)}</option>`).join('');
+      dRoomCreate.innerHTML = rooms.map(rm => `<option value=\"${escapeHtml(rm.id)}\">${escapeHtml(rm.name)}</option>`).join('');
+    }
+
+    async function fetchDevices() {
+      try {
+        const typeCode = dTypeFilter.value || '';
+        const url = typeCode ? `/api/v1/devices?type_code=${encodeURIComponent(typeCode)}` : '/api/v1/devices';
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        dRows.innerHTML = '';
+        for (const d of data) {
+          const type = typeById(d.device_type_id);
+          const room = roomById(d.room_id);
+          const code = type ? type.code : '';
+          const cat = type ? type.category : '';
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${escapeHtml(d.id)}</td>
+            <td>${escapeHtml(code || d.device_type_id)}</td>
+            <td>${escapeHtml(room ? room.name : d.room_id)}</td>
+            <td>${escapeHtml(d.connection_status || '')}</td>
+            <td>${escapeHtml(d.operational_state || '')}</td>
+            <td>
+              <div class="toolbar">
+                ${cat === 'actuator' ? `<button class="cmd" data-id="${escapeHtml(d.id)}" data-cmd="HEATING_TURN_ON">Turn On</button>` : ''}
+                ${cat === 'actuator' ? `<button class="cmd" data-id="${escapeHtml(d.id)}" data-cmd="HEATING_TURN_OFF">Turn Off</button>` : ''}
+                <button class="d-del" data-id="${escapeHtml(d.id)}">Delete</button>
+              </div>
+            </td>
+          `;
+          dRows.appendChild(tr);
+        }
+      } catch (e) {
+        dRows.innerHTML = `<tr><td colspan="6" class="muted">Failed to load: ${escapeHtml(String(e))}</td></tr>`;
+      }
+    }
+
+    dRefresh.addEventListener('click', fetchDevices);
+    dTypeFilter.addEventListener('change', fetchDevices);
+
+    dCreate.addEventListener('click', async () => {
+      dMsg.textContent = '';
+      const typeCode = dTypeCreate.value;
+      const roomId = dRoomCreate.value;
+      try {
+        const res = await fetch('/api/v1/devices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ device_type_code: typeCode, room_id: roomId })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        await fetchDevices();
+        dMsg.textContent = 'Created';
+        setTimeout(()=> dMsg.textContent = '', 1500);
+      } catch(e) {
+        dMsg.textContent = 'Failed to create: ' + String(e);
+      }
+    });
+
+    dRows.addEventListener('click', async (ev) => {
+      const t = ev.target;
+      if (!(t instanceof HTMLElement)) return;
+      if (t.classList.contains('d-del')) {
+        const id = t.getAttribute('data-id');
+        if (!id) return;
+        if (!confirm('Delete device ' + id + '?')) return;
+        try {
+          const res = await fetch('/api/v1/devices/' + encodeURIComponent(id), { method: 'DELETE' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          await fetchDevices();
+        } catch(e) {
+          alert('Delete failed: ' + String(e));
+        }
+        return;
+      }
+      if (t.classList.contains('cmd')) {
+        const id = t.getAttribute('data-id');
+        const cmd = t.getAttribute('data-cmd');
+        if (!id || !cmd) return;
+        try {
+          const res = await fetch('/api/v1/device-commands', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ device_id: id, command_type: cmd })
+          });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          alert('Command queued');
+        } catch(e) {
+          alert('Command failed: ' + String(e));
+        }
+        return;
+      }
+    });
+
+    // initial load for devices
+    (async () => {
+      await fetchTypesRooms();
+      await fetchDevices();
+    })();
   </script>
 </body>
 </html>

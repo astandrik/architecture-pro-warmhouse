@@ -188,8 +188,11 @@ func (h *SensorHandler) GetSensors(c *gin.Context)
 Документация API оформлена в виде спецификаций OpenAPI и AsyncAPI:
 
 ```markdown
-[REST API микросервисов (OpenAPI)](schemas/SmartHomeOpenAPI.yaml)  
-[Async API телеметрии (AsyncAPI)](schemas/TelemetryAsyncAPI.yaml)  
+[Swagger UI (локально)](http://localhost:8080/ui/docs/)  
+[REST API микросервисов (OpenAPI)](apps/smart_home/public/schemas/SmartHomeOpenAPI.yaml)  
+[Rest API девайсов (OpenAPI)](apps/smart_home/public/schemas/DeviceRegistryOpenAPI.yaml)  
+[Rest API User & Houses (OpenAPI)](apps/smart_home/public/schemas/UserHousesOpenAPI.yaml)  
+[Async API телеметрии (AsyncAPI)](apps/smart_home/public/schemas/TelemetryAsyncAPI.yaml)  
 ```
 
 # Задание 5. Работа с docker и docker-compose
@@ -292,3 +295,18 @@ Postman коллекция: `apps/smarthome-api.postman_collection.json`
 cd apps
 docker compose down
 ```
+
+### Swagger / OpenAPI просмотр
+
+- Встроенная страница: `http://localhost:8080/ui/docs/`
+  - Выберите в списке:
+    - SmartHomeOpenAPI.yaml
+    - DeviceRegistryOpenAPI.yaml
+    - UserHousesOpenAPI.yaml
+  - Рядом доступна ссылка на AsyncAPI (Telemetry).
+
+Спецификации лежат также в:
+- `apps/smart_home/public/schemas/SmartHomeOpenAPI.yaml`
+- `apps/smart_home/public/schemas/DeviceRegistryOpenAPI.yaml`
+- `apps/smart_home/public/schemas/UserHousesOpenAPI.yaml`
+- `apps/smart_home/public/schemas/TelemetryAsyncAPI.yaml`

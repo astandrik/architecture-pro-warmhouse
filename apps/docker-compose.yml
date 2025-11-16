@@ -54,6 +54,30 @@ services:
     restart: unless-stopped
     networks:
       - smarthome-network
+    environment:
+      - DEVICE_REGISTRY_URL=http://device-registry:8093
+
+  device-registry:
+    build:
+      context: ./device-registry-svc
+    image: smart-home/device-registry-svc:latest
+    container_name: device-registry-svc
+    ports:
+      - "8093:8093"
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
+  user-houses:
+    build:
+      context: ./user-houses-svc
+    image: smart-home/user-houses-svc:latest
+    container_name: user-houses-svc
+    ports:
+      - "8094:8094"
+    restart: unless-stopped
+    networks:
+      - smarthome-network
 
   app:
     build:
@@ -69,11 +93,17 @@ services:
         condition: service_started
       device-mgmt:
         condition: service_started
+      device-registry:
+        condition: service_started
+      user-houses:
+        condition: service_started
     environment:
       - DATABASE_URL=postgres://postgres:postgres@postgres:5432/smarthome
       - TEMPERATURE_API_URL=http://temperature-api:8081
       - TELEMETRY_URL=http://telemetry:8091
       - DEVICE_MGMT_URL=http://device-mgmt:8092
+      - USER_HOUSES_URL=http://user-houses:8094
+      - DEVICE_REGISTRY_URL=http://device-registry:8093
     ports:
       - "8080:8080"
     restart: unless-stopped

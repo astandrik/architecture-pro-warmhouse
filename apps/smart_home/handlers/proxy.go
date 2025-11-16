@@ -13,10 +13,12 @@ import (
 type ProxyHandler struct {
 	DeviceMgmt *services.DeviceMgmtClient
 	Telemetry  *services.TelemetryClient
+	Registry   *services.DeviceRegistryClient
+	UserHouses *services.UserHousesClient
 }
 
-func NewProxyHandler(dm *services.DeviceMgmtClient, t *services.TelemetryClient) *ProxyHandler {
-	return &ProxyHandler{DeviceMgmt: dm, Telemetry: t}
+func NewProxyHandler(dm *services.DeviceMgmtClient, t *services.TelemetryClient, r *services.DeviceRegistryClient, uh *services.UserHousesClient) *ProxyHandler {
+	return &ProxyHandler{DeviceMgmt: dm, Telemetry: t, Registry: r, UserHouses: uh}
 }
 
 func (h *ProxyHandler) RegisterRoutes(router *gin.RouterGroup) {
@@ -24,6 +26,12 @@ func (h *ProxyHandler) RegisterRoutes(router *gin.RouterGroup) {
 	router.POST("/device-commands", h.createDeviceCommand)
 	// GET /api/v1/telemetry
 	router.GET("/telemetry", h.getTelemetry)
+	// Device Registry proxy
+	router.GET("/devices", h.listDevices)
+	router.POST("/devices", h.createDevice)
+	router.DELETE("/devices/:id", h.deleteDevice)
+	router.GET("/device-types", h.listDeviceTypes)
+	router.GET("/rooms", h.listRooms)
 }
 
 func (h *ProxyHandler) createDeviceCommand(c *gin.Context) {
@@ -51,6 +59,59 @@ func (h *ProxyHandler) getTelemetry(c *gin.Context) {
 		}
 	}
 	resp, err := h.Telemetry.Query(deviceID, limit)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		return
+	}
+	defer resp.Body.Close()
+	copyResponse(c, resp)
+}
+
+func (h *ProxyHandler) listDevices(c *gin.Context) {
+	typeCode := c.Query("type_code")
+	resp, err := h.Registry.ListDevices(typeCode)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		return
+	}
+	defer resp.Body.Close()
+	copyResponse(c, resp)
+}
+
+func (h *ProxyHandler) createDevice(c *gin.Context) {
+	b, _ := io.ReadAll(c.Request.Body)
+	resp, err := h.Registry.CreateDevice(b)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		return
+	}
+	defer resp.Body.Close()
+	copyResponse(c, resp)
+}
+
+func (h *ProxyHandler) deleteDevice(c *gin.Context) {
+	id := c.Param("id")
+	resp, err := h.Registry.DeleteDevice(id)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		return
+	}
+	defer resp.Body.Close()
+	copyResponse(c, resp)
+}
+
+func (h *ProxyHandler) listDeviceTypes(c *gin.Context) {
+	resp, err := h.Registry.ListDeviceTypes()
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		return
+	}
+	defer resp.Body.Close()
+	copyResponse(c, resp)
+}
+
+func (h *ProxyHandler) listRooms(c *gin.Context) {
+	resp, err := h.UserHouses.ListRooms()
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return

@@ -1,8 +1,16 @@
 export class DeviceRegistryClient {
-  // Stub: would fetch device details in future
-  async exists(_deviceId: string): Promise<boolean> {
-    return true;
+  constructor(
+    private readonly baseUrl: string = process.env.DEVICE_REGISTRY_URL ||
+      "http://device-registry:8093"
+  ) {}
+  async exists(deviceId: string): Promise<boolean> {
+    try {
+      const res = await fetch(
+        `${this.baseUrl}/v1/devices/${encodeURIComponent(deviceId)}`
+      );
+      return res.ok;
+    } catch {
+      return false;
+    }
   }
 }
-
-

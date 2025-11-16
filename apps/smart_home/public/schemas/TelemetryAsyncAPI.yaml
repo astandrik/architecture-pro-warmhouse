@@ -52,5 +52,3 @@ channels:
               metric_type: temperature
               value_number: 21.7
               value_text: null
-
-
