@@ -1,0 +1,26 @@
+@startuml DeviceRegistry_components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Компоненты Device Registry Service
+
+Container_Boundary(devreg_svc, "Device Registry Service") {
+    Component(dr_api, "Device Registry API", "REST", "HTTP-эндпоинты типов устройств, модулей и устройств")
+    Component(dr_app, "DeviceRegistry Service", "Service", "Логика реестра типов, модулей и устройств")
+    Component(dr_repo, "DeviceRepository", "Repository", "Доступ к БД типов, модулей и устройств")
+    Component(dr_uh_client, "User & Houses Client", "Client", "Проверка домов и комнат")
+}
+
+ContainerDb(devreg_db, "device_registry_db", "SQL DB", "Типы устройств, модули и устройства")
+
+Rel(dr_api, dr_app, "Вызывает")
+Rel(dr_app, dr_repo, "Использует")
+Rel(dr_app, dr_uh_client, "Вызывает")
+Rel(dr_repo, devreg_db, "Чтение/запись", "SQL/TCP")
+
+SHOW_LEGEND()
+
+@enduml
+
+

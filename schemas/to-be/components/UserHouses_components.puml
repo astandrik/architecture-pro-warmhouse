@@ -1,0 +1,34 @@
+@startuml UserHouses_components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Компоненты User & Houses Service
+
+Container_Boundary(userhouses_svc, "User & Houses Service") {
+    Component(uh_api, "User & Houses API", "REST", "HTTP-эндпоинты домов, комнат и сценариев")
+    Component(uh_app, "UserHouse Application Service", "Service", "Логика домов, комнат и связей")
+    Component(uh_repo, "UserHouse Repository", "Repository", "Доступ к БД домов и сценариев")
+
+    Component(uh_rules_engine, "Rules/Scenario Engine", "Service", "Исполнение сценариев")
+    Component(uh_rules_repo, "Scenario Repository", "Repository", "Хранение сценариев и состояний")
+    Component(uh_events_consumer, "Telemetry Events API", "REST", "Приём событий телеметрии по HTTP от Telemetry Service")
+    Component(uh_cmd_sender, "Command Sender", "Client", "Команды в Control-сервисы")
+}
+
+ContainerDb(userhouses_db, "user_houses_db", "SQL DB", "Пользователи, дома, комнаты, сценарии")
+
+Rel(uh_api, uh_app, "Вызывает")
+Rel(uh_app, uh_repo, "Использует")
+Rel(uh_rules_engine, uh_rules_repo, "Читает и пишет сценарии")
+Rel(uh_rules_engine, uh_cmd_sender, "Отправляет команды", "HTTP/Async → Controls")
+Rel(uh_events_consumer, uh_rules_engine, "Передаёт события телеметрии", "Async")
+
+Rel(uh_repo, userhouses_db, "Чтение/запись", "SQL/TCP")
+Rel(uh_rules_repo, userhouses_db, "Чтение/запись", "SQL/TCP")
+
+SHOW_LEGEND()
+
+@enduml
+
+

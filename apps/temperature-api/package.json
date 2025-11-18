@@ -1,0 +1,13 @@
+{
+  "name": "temperature-api",
+  "version": "1.0.0",
+  "description": "Simple temperature API returning random values for demo purposes",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT"
+}
+
+

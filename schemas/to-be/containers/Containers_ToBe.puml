@@ -1,0 +1,66 @@
+@startuml Containers_ToBe
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Диаграмма контейнеров системы "Тёплый дом" (To-Be)
+
+Person(user, "Владелец дома", "Управляет своим домом")
+
+System_Boundary(smarthome, "Платформа «Тёплый дом»") {
+    Container(webapp, "Web/Mobile App", "Web/Mobile", "UI для управления домом")
+
+    Container(apigw, "API Gateway / BFF", "Web API", "Единая точка входа")
+
+    Container(auth, "Auth Service", "Service", "Аутентификация, токены")
+    ContainerDb(auth_db, "auth_db", "SQL DB", "Учётные записи и токены")
+
+    Container(userhouses, "User & Houses Service", "Service", "Пользователи, дома, комнаты, сценарии")
+    ContainerDb(userhouses_db, "user_houses_db", "SQL DB", "Структура домов и сценарии")
+
+    Container(devreg, "Device Registry Service", "Service", "Реестр типов устройств, модулей и устройств")
+    ContainerDb(devreg_db, "device_registry_db", "SQL DB", "Типы устройств, модули и привязки устройств")
+
+    Container(device_mgmt, "Device Management & Control Service", "Service", "Управление устройствами (отопление, свет, ворота, камеры)")
+    ContainerDb(device_mgmt_db, "device_mgmt_db", "SQL DB", "Команды устройств")
+
+    Container(telemetry, "Telemetry Service", "Service", "Телеметрия и история")
+    ContainerDb(telemetry_db, "telemetry_db", "Time-series DB", "Данные датчиков")
+
+    Container(message_broker, "Message Broker", "MQTT", "События и команды")
+}
+
+System_Ext(devices, "Устройства умного дома", "Датчики, реле, свет, ворота, камеры")
+System_Ext(partners, "Партнёрские платформы", "Temperature API и др.")
+
+Rel(user, webapp, "Управляет домом", "HTTPS")
+Rel(webapp, apigw, "HTTP-запросы UI", "HTTPS")
+
+Rel(apigw, auth, "Регистрация/логин, проверка токенов", "HTTP")
+Rel(auth, auth_db, "Чтение/запись", "SQL/TCP")
+
+Rel(apigw, userhouses, "Пользователи, дома, комнаты", "HTTP")
+Rel(userhouses, userhouses_db, "Чтение/запись", "SQL/TCP")
+
+Rel(apigw, devreg, "Работа с устройствами", "HTTP")
+Rel(devreg, devreg_db, "Чтение/запись", "SQL/TCP")
+
+Rel(apigw, device_mgmt, "Команды устройств", "HTTP")
+Rel(device_mgmt, device_mgmt_db, "Чтение/запись", "SQL/TCP")
+
+Rel(apigw, telemetry, "Запрос/ингест телеметрии", "HTTP")
+Rel(telemetry, telemetry_db, "Чтение/запись", "SQL/TCP")
+
+Rel(telemetry, userhouses, "События для сценариев", "HTTP/Async")
+
+Rel(device_mgmt, message_broker, "Команды устройств", "Async")
+Rel(telemetry, message_broker, "Получает телеметрию, публикует события", "Async")
+
+Rel(devices, message_broker, "Телеметрия и команды", "MQTT/IoT")
+Rel(partners, message_broker, "Телеметрия →", "HTTP/Async")
+
+SHOW_LEGEND()
+
+@enduml
+
+

@@ -189,6 +189,221 @@
                 "description": "Update a sensor's value and status"
             },
             "response": []
+        },
+        {
+            "name": "Device Command (proxy) - Create",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"device_id\": \"96cfe7f2-6a9a-4b86-9d62-a49006cdd0f3\",\n  \"command_type\": \"HEATING_TURN_ON\",\n  \"payload\": {\"mode\":\"COMFORT\"}\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/api/v1/device-commands",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "api",
+                        "v1",
+                        "device-commands"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Telemetry (proxy) - Query",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8080/api/v1/telemetry?device_id=96cfe7f2-6a9a-4b86-9d62-a49006cdd0f3&limit=10",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "api",
+                        "v1",
+                        "telemetry"
+                    ],
+                    "query": [
+                        {
+                            "key": "device_id",
+                            "value": "96cfe7f2-6a9a-4b86-9d62-a49006cdd0f3"
+                        },
+                        {
+                            "key": "limit",
+                            "value": "10"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Telemetry (direct) - Ingest",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"device_id\": \"96cfe7f2-6a9a-4b86-9d62-a49006cdd0f3\",\n  \"timestamp\": \"2025-11-16T10:45:12Z\",\n  \"metric_type\": \"temperature\",\n  \"value_number\": 21.7\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8091/v1/telemetry",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8091",
+                    "path": [
+                        "v1",
+                        "telemetry"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Telemetry (direct) - Query",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8091/v1/telemetry?device_id=96cfe7f2-6a9a-4b86-9d62-a49006cdd0f3&limit=5",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8091",
+                    "path": [
+                        "v1",
+                        "telemetry"
+                    ],
+                    "query": [
+                        {
+                            "key": "device_id",
+                            "value": "96cfe7f2-6a9a-4b86-9d62-a49006cdd0f3"
+                        },
+                        {
+                            "key": "limit",
+                            "value": "5"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Device Command (direct) - Create",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"device_id\": \"96cfe7f2-6a9a-4b86-9d62-a49006cdd0f3\",\n  \"command_type\": \"HEATING_TURN_ON\"\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8092/v1/device-commands",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8092",
+                    "path": [
+                        "v1",
+                        "device-commands"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Device Command (direct) - Get by ID",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8092/v1/device-commands/4c3538d3-0fd0-4c80-9f63-9e03136d7d63",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8092",
+                    "path": [
+                        "v1",
+                        "device-commands",
+                        "4c3538d3-0fd0-4c80-9f63-9e03136d7d63"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Temperature API - By Location",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8081/temperature?location=Living%20Room",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8081",
+                    "path": [
+                        "temperature"
+                    ],
+                    "query": [
+                        {
+                            "key": "location",
+                            "value": "Living Room"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Temperature API - By Sensor ID",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8081/temperature/1",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8081",
+                    "path": [
+                        "temperature",
+                        "1"
+                    ]
+                }
+            },
+            "response": []
         }
     ],
     "event": [

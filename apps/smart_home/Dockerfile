@@ -27,6 +27,8 @@ WORKDIR /app
 
 # Copy the binary from the builder stage
 COPY --from=builder /app/smarthome .
+# Copy static UI assets
+COPY --from=builder /app/public ./public
 
 # Expose the port the app runs on
 EXPOSE 8080

@@ -1,0 +1,53 @@
+@startuml DeviceManagementAndControl_components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Компоненты Device Management & Control Service
+
+Container_Boundary(device_mgmt, "Device Management & Control Service") {
+    ' Унифицированный API для всех устройств
+    Component(dev_api, "Device Control API", "REST", "HTTP-команды устройств")
+    Component(dev_app, "DeviceCommandService", "Service", "Обработка команд устройств")
+    Component(access_policy, "Access & Ownership Policy", "Component", "Проверка прав доступа")
+    Component(cmd_repo, "DeviceCommandRepository", "Repository", "Лог команд устройств")
+
+    ' Маршрутизация по типам устройств
+    Component(adapter_router, "DeviceAdapterRouter", "Adapter", "Маршрутизация команд по типу устройства")
+    Component(heat_adapter, "HeatingAdapter", "Adapter", "Команды отопления")
+    Component(light_adapter, "LightingAdapter", "Adapter", "Команды освещения")
+    Component(gate_adapter, "GateAdapter", "Adapter", "Команды ворот")
+    Component(surv_adapter, "SurveillanceAdapter", "Adapter", "Команды камер")
+
+    ' Общие клиенты и брокер
+    Component(uh_client, "User & Houses Client", "Client", "Дома, комнаты и сценарии")
+    Component(dev_client, "Device Registry Client", "Client", "Реестр устройств")
+    Component(bus_client, "MessageBus Client", "Client", "Публикация команд в брокер")
+}
+
+ContainerDb(device_mgmt_db, "device_mgmt_db", "SQL DB", "Устройства и команды")
+
+Rel(dev_api, dev_app, "Вызывает")
+Rel(dev_app, access_policy, "Вызывает")
+Rel(dev_app, cmd_repo, "Сохраняет команду")
+Rel(dev_app, adapter_router, "Передаёт команду")
+
+Rel(adapter_router, heat_adapter, "Команды отопления")
+Rel(adapter_router, light_adapter, "Команды освещения")
+Rel(adapter_router, gate_adapter, "Команды ворот")
+Rel(adapter_router, surv_adapter, "Команды камер")
+
+Rel(access_policy, uh_client, "Запрос связей", "HTTP")
+Rel(access_policy, dev_client, "Запрос устройства", "HTTP")
+
+Rel(cmd_repo, device_mgmt_db, "Чтение/запись", "SQL/TCP")
+Rel(heat_adapter, bus_client, "Публикует", "Async → Broker")
+Rel(light_adapter, bus_client, "Публикует", "Async → Broker")
+Rel(gate_adapter, bus_client, "Публикует", "Async → Broker")
+Rel(surv_adapter, bus_client, "Публикует", "Async → Broker")
+
+SHOW_LEGEND()
+
+@enduml
+
+
